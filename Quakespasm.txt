@@ -712,7 +712,7 @@
   -  Fix possible freeze in SV_TouchLinks regardless of what QC does in
      the touch function.
 
-  -  Fix for maps with empty strings for vector keys (e.g. "origin
+  -  Fix for maps with empty strings for vector keys (e.g. "origin");
      don't read uninitialized memory.
 
   -  Support for Open Watcom compiler.
