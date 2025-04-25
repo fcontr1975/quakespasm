@@ -83,12 +83,26 @@ cvar_t		scr_sbarscale = {"scr_sbarscale", "1", CVAR_ARCHIVE};
 cvar_t		scr_sbaralpha = {"scr_sbaralpha", "0.75", CVAR_ARCHIVE};
 cvar_t		scr_conwidth = {"scr_conwidth", "0", CVAR_ARCHIVE};
 cvar_t		scr_conscale = {"scr_conscale", "1", CVAR_ARCHIVE};
-cvar_t		scr_crosshairscale = {"scr_crosshairscale", "1", CVAR_ARCHIVE};
-cvar_t		scr_showfps = {"scr_showfps", "0", CVAR_NONE};
-cvar_t		scr_clock = {"scr_clock", "0", CVAR_NONE};
+cvar_t		scr_showfps = {"scr_showfps", "0", CVAR_ARCHIVE};
+cvar_t		scr_clock = {"scr_clock", "0", CVAR_ARCHIVE};
+
+// ==========================================
+// federico contreras --- new crosshair stuff
+// ==========================================
+
+// these two are OG johnfitz cvars placed here to keep everything together
+cvar_t    scr_crosshairscale = { "scr_crosshairscale", "1", CVAR_ARCHIVE }; //johnfitz
+cvar_t    scr_crosshairalpha = { "scr_crosshairalpha", "1", CVAR_ARCHIVE }; //johnfitz
+cvar_t    scr_crosshaircolor = { "scr_crosshaircolor", "251", CVAR_ARCHIVE }; //defaults to bright red
+cvar_t    scr_crosshairthickness = { "scr_crosshairthickness", "4", CVAR_ARCHIVE };
+cvar_t    scr_crosshairsize = { "scr_crosshairsize", "16", CVAR_ARCHIVE };
+cvar_t    scr_crosshairbarunitsize = { "scr_crosshairbarunitsize", "2", CVAR_ARCHIVE };
+cvar_t    scr_crosshairshape = { "scr_crosshairshape","0",CVAR_ARCHIVE };
+cvar_t    scr_showcrosshairstats = { "scr_showcrosshairstats","0",CVAR_ARCHIVE };
+cvar_t    scr_crosshairstatsdistance = { "scr_crosshairstatsdistance","64",CVAR_ARCHIVE };
+
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
-
 cvar_t		scr_viewsize = {"viewsize","100", CVAR_ARCHIVE};
 cvar_t		scr_fov = {"fov","90",CVAR_NONE};	// 10 - 170
 cvar_t		scr_fov_adapt = {"fov_adapt","1",CVAR_ARCHIVE};
@@ -98,15 +112,28 @@ cvar_t		scr_showturtle = {"showturtle","0",CVAR_NONE};
 cvar_t		scr_showpause = {"showpause","1",CVAR_NONE};
 cvar_t		scr_printspeed = {"scr_printspeed","8",CVAR_NONE};
 cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", CVAR_ARCHIVE};
-
 cvar_t		cl_gun_fovscale = {"cl_gun_fovscale","1",CVAR_ARCHIVE}; // Qrack
 
 extern	cvar_t	crosshair;
 
+// Federico Contreras - new crosshair stuff
+int 		chsz = 16;
+int 		chthk = 2;
+int 		chs = 1;
+int 		chc = 251;
+int 		cha = 1;
+int 		chbuz = 2;
+int 		chhbs = 100;
+int 		chabs = 0;
+int 		chbbs = 0; 
+int 		chsd = 64;
+// ========================================
+
+
 qboolean	scr_initialized;		// ready to draw
 
 qpic_t		*scr_net;
-qpic_t		*scr_turtle;
+qpic_t      *scr_turtle;
 
 int			clearconsole;
 int			clearnotify;
@@ -404,10 +431,20 @@ void SCR_Init (void)
 	Cvar_SetCallback (&scr_conscale, &SCR_Conwidth_f);
 	Cvar_RegisterVariable (&scr_conwidth);
 	Cvar_RegisterVariable (&scr_conscale);
-	Cvar_RegisterVariable (&scr_crosshairscale);
-	Cvar_RegisterVariable (&scr_showfps);
-	Cvar_RegisterVariable (&scr_clock);
+	
+	// Federico Contreras
+	Cvar_RegisterVariable(&scr_crosshairscale); //johnfitz, moving here to keep all the crosshair stuff in one place
+	Cvar_RegisterVariable(&scr_crosshairalpha); //johnfitz, moving here to keep all the crosshair stuff in one place
+	Cvar_RegisterVariable (&scr_crosshaircolor);
+	Cvar_RegisterVariable(&scr_crosshairthickness);
+	Cvar_RegisterVariable(&scr_crosshairsize);
+	Cvar_RegisterVariable(&scr_crosshairshape);
+	Cvar_RegisterVariable(&scr_showcrosshairstats);
+	Cvar_RegisterVariable(&scr_crosshairstatsdistance);
+
 	//johnfitz
+	Cvar_RegisterVariable(&scr_showfps);
+	Cvar_RegisterVariable(&scr_clock);
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
 	Cvar_SetCallback (&scr_fov_adapt, SCR_Callback_refdef);
@@ -575,7 +612,6 @@ void SCR_DrawTurtle (void)
 		return;
 
 	GL_SetCanvas (CANVAS_DEFAULT); //johnfitz
-
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
@@ -592,7 +628,6 @@ void SCR_DrawNet (void)
 		return;
 
 	GL_SetCanvas (CANVAS_DEFAULT); //johnfitz
-
 	Draw_Pic (scr_vrect.x+64, scr_vrect.y, scr_net);
 }
 
@@ -640,23 +675,86 @@ void SCR_DrawLoading (void)
 }
 
 /*
-==============
+=============================
 SCR_DrawCrosshair -- johnfitz
-==============
+=============================
 */
 void SCR_DrawCrosshair (void)
 {
-	if (!crosshair.value)
-		return;
 
-	GL_SetCanvas (CANVAS_CROSSHAIR);
-	Draw_Character (-4, -4, '+'); //0,0 is center of viewport
+	GL_SetCanvas(CANVAS_CROSSHAIR);
+		
+	chsz = (int)scr_crosshairsize.value;
+	chthk = (int)scr_crosshairthickness.value;
+	chs = (int)scr_crosshairshape.value;
+	chc = (int)scr_crosshaircolor.value;
+	cha = (int)scr_crosshairalpha.value;
+	chbuz = (int)scr_crosshairbarunitsize.value;
+	chhbs = cl.stats[STAT_HEALTH];
+
+	// make sure to not show a health bar if you're dead, that would be disappointing...
+	if (chhbs < 0)
+		chhbs = 0;
+
+	chabs = cl.stats[STAT_ARMOR];
+	chbbs = cl.stats[STAT_AMMO]; // bulletbarsize! Ha!
+	chsd = (int)scr_crosshairstatsdistance.value;
+
+	// Draw our crosshair
+	switch ((int)crosshair.value) {
+		case 1:
+			// draw the standard crosshair
+			Draw_Character(-4, -4, '+'); //0,0 is center of viewport
+			break;
+		case 2:
+			// Federico Contreras' completely configurable vector crosshair
+			switch (chs) {
+				// Normal cross
+				case 0:
+					// Horizontal Stroke
+					Draw_Fill ((chsz / 2) * -1, chthk / 2 * -1, chsz, chthk, chc, cha);
+					// Vertical Stroke
+					Draw_Fill ((chthk / 2) * -1, (chsz / 2) * -1, chthk, chsz, chc, cha);
+					break;
+
+				// A simple, filled dot / square
+				case 1:
+					Draw_Fill (-(chsz / 2), -(chsz / 2), chsz, chsz, chc, cha);
+					break;
+
+				// 4 lines describing a square like object... 
+				case 2:
+					Draw_Fill (-chsz / 2, -chsz / 2 + -chthk, chsz, chthk, chc, cha); // top
+					Draw_Fill (-chsz / 2, chsz / 2, chsz, chthk, chc, cha); //bottom
+					Draw_Fill (-chsz / 2 + -chthk, -chsz / 2, chthk, chsz, chc, cha); //left
+					Draw_Fill (chsz / 2, -chsz / 2, chthk, chsz, chc, cha); //right
+					break;
+				// Cross of the battle saints -- sandy petersen gonna be mad about this one.
+				case 3:
+					// Horizontal Stroke
+					Draw_Fill ((chsz / 2) * -1, chthk / 2 * -1, chsz, chthk, chc, cha);
+					// Vertical Stroke
+					Draw_Fill ((chthk / 2) * -1, (chsz / 2) * -1, chthk, chsz * 2, chc, cha);
+					break;
+					// Cross of the tormented souls -- he gonna be mad about this one too ...
+				case 4:
+					// Horizontal Stroke
+					Draw_Fill ((chsz / 2) * -1, chthk / 2 * -1, chsz, chthk, chc, cha);
+					// Vertical Stroke
+					Draw_Fill ((chthk / 2) * -1, chsz / 2, chthk, -chsz * 2, chc, cha);
+					break;
+			} // Indentation is correct here I swear, it's a switch inside a switch, I'm sure that's totally fine for performance ...
+			break;
+	}
+
+	// If Ranger wants the stats, give him the stats.
+	if ((int)scr_showcrosshairstats.value == 1) {
+		Draw_Fill(-(chhbs/2) * chbuz, chsd, chhbs * chbuz, chthk, 251, cha); // health bar
+		Draw_Fill(-(chabs/2) * chbuz, chsd + (chthk * 2), chabs * chbuz, chthk, 47, cha); // armor bar
+		Draw_Fill(-(chbbs/2) * chbuz, chsd + (chthk * 4), chbbs * chbuz, chthk, 242, cha); // ammo bar
+	}
 }
-
-
-
 //=============================================================================
-
 
 /*
 ==================
@@ -831,16 +929,13 @@ void SCR_ScreenShot_f (void)
 
 	free (buffer);
 }
-
-
 //=============================================================================
 
 
 /*
-===============
+======================
 SCR_BeginLoadingPlaque
-
-================
+======================
 */
 void SCR_BeginLoadingPlaque (void)
 {
@@ -866,10 +961,9 @@ void SCR_BeginLoadingPlaque (void)
 }
 
 /*
-===============
+====================
 SCR_EndLoadingPlaque
-
-================
+====================
 */
 void SCR_EndLoadingPlaque (void)
 {
@@ -1020,7 +1114,7 @@ void SCR_TileClear (void)
 }
 
 /*
-==================
+=========================================================================
 SCR_UpdateScreen
 
 This is called every frame, and can also be called explicitly to flush
@@ -1028,7 +1122,7 @@ text to the screen.
 
 WARNING: be very careful calling this from elsewhere, because the refresh
 needs almost the entire 256k of stack space!
-==================
+=========================================================================
 */
 void SCR_UpdateScreen (void)
 {

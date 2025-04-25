@@ -3,7 +3,7 @@
   ______________________________________________________________________
 
 
-  Page last edited: July 2024.
+  Page last edited: April 2025.
 
 
   1. About
@@ -219,8 +219,51 @@
   you normally do.
 
 
-  5. Changes
+  
 
+  5. Changes
+  
+  Unofficial Changes 20250425:
+
+  -  After 29 years on this earth, Quake finally has a nice, configurable
+     crosshair with stats that will make it easier to play quake VR when 
+     I port these changes to DRBeef's VR Quake port.
+
+     Cross Hair Configuration Help: 
+     Federico Contreras' fully configurable Draw_Fill()-based crosshair
+
+       crosshair 1: John Fitz' crosshair (rendered with the quake font)
+       
+       crosshair 2: The new fully-configurable crosshair.
+         To select the crosshair options, there are some cvars you can set:
+           scr_crosshairshape [0, 1, 3]: Controls the shape of the crosshair.
+             So far: 0: cross, 2: dot, 3: square, 4: Cross for the pious And
+             5: cross for the less-pious.
+
+           scr_crosshairsize: Controls the pixel-size of your crosshair
+
+           scr_crosshairthickness: Controls the thickness of the lines used
+             to draw your crosshair.
+
+           scr_crosshaircolor: Sets crosshair color: Colors: 224 - 239 and 
+             240 - 252 are the fullbrights from the quake palette, these are all
+             good choices, but all colors are available. Default is 251,
+             fullbright red.
+
+           scr_showcrosshairstats: Prints a set of unobtrusive colored lines near
+             the crosshair indicating health, armor and ammo so you can play the
+             brutalism mod in full screen to gawk at its brutalist glory in full.
+
+           scr_crosshairstatsdistance: Controls the vertical distance between
+             the crosshair and the start position of the first hud indicator
+             (health) default is 64, which makes stats hang out pretty close to
+             the crosshair but not on it, my little macbook air is only 900p so
+             at 400 they draw on top of my weapon.
+           
+           scr_crosshairbarunitsize: Controls the multiplier used to draw your
+             stats bars. Default is 2. If you have 80 health your health hud 
+             indicator will be 160 pixels wide. 
+ 
   Changes in 0.96.3:
 
   -  Fix potential infinite loop when playing sounds with loop start >=
@@ -669,7 +712,7 @@
   -  Fix possible freeze in SV_TouchLinks regardless of what QC does in
      the touch function.
 
-  -  Fix for maps with empty strings for vector keys (e.g. "origin");
+  -  Fix for maps with empty strings for vector keys (e.g. "origin
      don't read uninitialized memory.
 
   -  Support for Open Watcom compiler.
