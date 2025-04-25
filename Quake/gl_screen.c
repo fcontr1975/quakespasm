@@ -97,9 +97,9 @@ cvar_t    scr_crosshaircolor = { "scr_crosshaircolor", "251", CVAR_ARCHIVE }; //
 cvar_t    scr_crosshairthickness = { "scr_crosshairthickness", "4", CVAR_ARCHIVE };
 cvar_t    scr_crosshairsize = { "scr_crosshairsize", "16", CVAR_ARCHIVE };
 cvar_t    scr_crosshairbarunitsize = { "scr_crosshairbarunitsize", "2", CVAR_ARCHIVE };
-cvar_t    scr_crosshairshape = { "scr_crosshairshape","0",CVAR_ARCHIVE };
-cvar_t    scr_showcrosshairstats = { "scr_showcrosshairstats","0",CVAR_ARCHIVE };
-cvar_t    scr_crosshairstatsdistance = { "scr_crosshairstatsdistance","64",CVAR_ARCHIVE };
+cvar_t    scr_crosshairshape = { "scr_crosshairshape","1",CVAR_ARCHIVE };
+cvar_t    scr_crosshairstats = { "scr_crosshairstats","0",CVAR_ARCHIVE };
+cvar_t    scr_crosshairstatsdistance = { "scr_crosshairstatsdistance","128",CVAR_ARCHIVE };
 
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
@@ -115,20 +115,6 @@ cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", CVAR_ARCHIVE};
 cvar_t		cl_gun_fovscale = {"cl_gun_fovscale","1",CVAR_ARCHIVE}; // Qrack
 
 extern	cvar_t	crosshair;
-
-// Federico Contreras - new crosshair stuff
-int 		chsz = 16;
-int 		chthk = 2;
-int 		chs = 1;
-int 		chc = 251;
-int 		cha = 1;
-int 		chbuz = 2;
-int 		chhbs = 100;
-int 		chabs = 0;
-int 		chbbs = 0; 
-int 		chsd = 64;
-// ========================================
-
 
 qboolean	scr_initialized;		// ready to draw
 
@@ -439,8 +425,9 @@ void SCR_Init (void)
 	Cvar_RegisterVariable(&scr_crosshairthickness);
 	Cvar_RegisterVariable(&scr_crosshairsize);
 	Cvar_RegisterVariable(&scr_crosshairshape);
-	Cvar_RegisterVariable(&scr_showcrosshairstats);
+	Cvar_RegisterVariable(&scr_crosshairstats);
 	Cvar_RegisterVariable(&scr_crosshairstatsdistance);
+	Cvar_RegisterVariable(&scr_crosshairbarunitsize);
 
 	//johnfitz
 	Cvar_RegisterVariable(&scr_showfps);
@@ -681,24 +668,18 @@ SCR_DrawCrosshair -- johnfitz
 */
 void SCR_DrawCrosshair (void)
 {
-
 	GL_SetCanvas(CANVAS_CROSSHAIR);
 		
-	chsz = (int)scr_crosshairsize.value;
-	chthk = (int)scr_crosshairthickness.value;
-	chs = (int)scr_crosshairshape.value;
-	chc = (int)scr_crosshaircolor.value;
-	cha = (int)scr_crosshairalpha.value;
-	chbuz = (int)scr_crosshairbarunitsize.value;
-	chhbs = cl.stats[STAT_HEALTH];
-
-	// make sure to not show a health bar if you're dead, that would be disappointing...
-	if (chhbs < 0)
-		chhbs = 0;
-
-	chabs = cl.stats[STAT_ARMOR];
-	chbbs = cl.stats[STAT_AMMO]; // bulletbarsize! Ha!
-	chsd = (int)scr_crosshairstatsdistance.value;
+	int chsz = (int)scr_crosshairsize.value;
+	int chthk = (int)scr_crosshairthickness.value;
+	int chs = (int)scr_crosshairshape.value;
+	int chc = (int)scr_crosshaircolor.value;
+	int cha = (int)scr_crosshairalpha.value;
+	int chbuz = (int)scr_crosshairbarunitsize.value;
+	int chhbs = cl.stats[STAT_HEALTH];
+	int chabs = cl.stats[STAT_ARMOR];
+	int chbbs = cl.stats[STAT_AMMO]; // bulletbarsize! Ha!
+	int chsd = (int)scr_crosshairstatsdistance.value;
 
 	// Draw our crosshair
 	switch ((int)crosshair.value) {
@@ -748,10 +729,12 @@ void SCR_DrawCrosshair (void)
 	}
 
 	// If Ranger wants the stats, give him the stats.
-	if ((int)scr_showcrosshairstats.value == 1) {
-		Draw_Fill(-(chhbs/2) * chbuz, chsd, chhbs * chbuz, chthk, 251, cha); // health bar
-		Draw_Fill(-(chabs/2) * chbuz, chsd + (chthk * 2), chabs * chbuz, chthk, 47, cha); // armor bar
-		Draw_Fill(-(chbbs/2) * chbuz, chsd + (chthk * 4), chbbs * chbuz, chthk, 242, cha); // ammo bar
+	if ((int)scr_crosshairstats.value == 1) {
+		// make sure to not show a health bar if you're dead, that would be disappointing...
+		if (chhbs < 0) chhbs = 0;
+		Draw_Fill(-(chhbs * chbuz) / 2, chsd, chhbs * chbuz, chthk, 251, cha); // health bar
+		Draw_Fill(-(chabs * chbuz) / 2, chsd + (chthk * 2), chabs * chbuz, chthk, 47, cha); // armor bar
+		Draw_Fill(-(chbbs * chbuz) / 2, chsd + (chthk * 4), chbbs * chbuz, chthk, 242, cha); // ammo bar
 	}
 }
 //=============================================================================
