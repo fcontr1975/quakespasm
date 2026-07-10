@@ -76,6 +76,14 @@ extern	cvar_t		scr_conwidth;
 extern	cvar_t		scr_conscale;
 extern	cvar_t		scr_scale;
 extern	cvar_t		scr_crosshairscale;
+extern	cvar_t		scr_crosshairalpha;
+extern	cvar_t		scr_crosshaircolor;
+extern	cvar_t		scr_crosshairthickness;
+extern	cvar_t		scr_crosshairsize;
+extern	cvar_t		scr_crosshairbarunitsize;
+extern	cvar_t		scr_crosshairshape;
+extern	cvar_t		scr_crosshairstats;
+extern	cvar_t		scr_crosshairstatsdistance;
 //johnfitz
 
 extern int scr_tileclear_updates; //johnfitz

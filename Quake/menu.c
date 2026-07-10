@@ -41,6 +41,7 @@ void M_Menu_Main_f (void);
 		void M_Menu_Search_f (void);
 		void M_Menu_ServerList_f (void);
 	void M_Menu_Options_f (void);
+		void M_Menu_Crosshair_f (void);
 		void M_Menu_Keys_f (void);
 		void M_Menu_Video_f (void);
 	void M_Menu_Help_f (void);
@@ -58,6 +59,7 @@ void M_Main_Draw (void);
 		void M_Search_Draw (void);
 		void M_ServerList_Draw (void);
 	void M_Options_Draw (void);
+		void M_Crosshair_Draw (void);
 		void M_Keys_Draw (void);
 		void M_Video_Draw (void);
 	void M_Help_Draw (void);
@@ -75,6 +77,7 @@ void M_Main_Key (int key);
 		void M_Search_Key (int key);
 		void M_ServerList_Key (int key);
 	void M_Options_Key (int key);
+		void M_Crosshair_Key (int key);
 		void M_Keys_Key (int key);
 		void M_Video_Key (int key);
 	void M_Help_Key (int key);
@@ -981,6 +984,7 @@ enum
 	OPT_DEFAULTS,	// 2
 	OPT_SCALE,
 	OPT_SCRSIZE,
+	OPT_CROSSHAIR,
 	OPT_GAMMA,
 	OPT_CONTRAST,
 	OPT_MOUSESPEED,
@@ -1010,7 +1014,26 @@ enum
 
 #define	SLIDER_RANGE	10
 
+static const char *crosshair_shape_names[] =
+{
+	"cross",
+	"square",
+	"frame",
+	"battle",
+	"torment"
+};
+
+static const char *crosshair_mode_names[] =
+{
+	"off",
+	"classic",
+	"vector"
+};
+
+extern cvar_t	crosshair;
+
 int		options_cursor;
+static int	crosshair_cursor;
 
 void M_Menu_Options_f (void)
 {
@@ -1197,6 +1220,10 @@ void M_Options_Draw (void)
 	r = (scr_viewsize.value - 30) / (120 - 30);
 	M_DrawSlider (220, 32 + 8*OPT_SCRSIZE, r, scr_viewsize.value, "%.0f");
 
+	// OPT_CROSSHAIR:
+	M_Print (16, 32 + 8*OPT_CROSSHAIR,	"     Crosshair Options");
+	M_Print (220, 32 + 8*OPT_CROSSHAIR,	"[enter] to change");
+
 	// OPT_GAMMA:
 	M_Print (16, 32 + 8*OPT_GAMMA,		"            Brightness");
 	r = (1.0 - vid_gamma.value) / 0.5;
@@ -1295,6 +1322,9 @@ void M_Options_Key (int k)
 				Cbuf_AddText ("exec default.cfg\n");
 			}
 			break;
+		case OPT_CROSSHAIR:
+			M_Menu_Crosshair_f ();
+			break;
 		case OPT_VIDEO:
 			M_Menu_Video_f ();
 			break;
@@ -1333,6 +1363,197 @@ void M_Options_Key (int k)
 			options_cursor = OPTIONS_ITEMS - 2;
 		else
 			options_cursor = 0;
+	}
+}
+
+enum
+{
+	CH_OPT_MODE = 0,
+	CH_OPT_SCALE,
+	CH_OPT_SIZE,
+	CH_OPT_THICKNESS,
+	CH_OPT_SHAPE,
+	CH_OPT_COLOR,
+	CH_OPT_ALPHA,
+	CH_OPT_STATS,
+	CH_OPT_STATS_DIST,
+	CH_OPT_BARUNITSIZE,
+	CROSSHAIR_ITEMS
+};
+
+void M_Menu_Crosshair_f (void)
+{
+	IN_Deactivate(modestate == MS_WINDOWED);
+	key_dest = key_menu;
+	m_state = m_crosshair;
+	m_entersound = true;
+}
+
+static void M_Crosshair_AdjustSliders (int dir)
+{
+	float f;
+
+	S_LocalSound ("misc/menu3.wav");
+
+	switch (crosshair_cursor)
+	{
+	case CH_OPT_MODE:
+	{
+		int mode = CLAMP (0, (int)crosshair.value, (int)Q_COUNTOF(crosshair_mode_names) - 1);
+		mode = (mode + dir + (int)Q_COUNTOF(crosshair_mode_names)) % (int)Q_COUNTOF(crosshair_mode_names);
+		Cvar_SetValue ("crosshair", mode);
+	}
+		break;
+	case CH_OPT_SCALE:
+		f = scr_crosshairscale.value + dir * 0.1;
+		if (f < 1) f = 1;
+		else if (f > 10) f = 10;
+		Cvar_SetValue ("scr_crosshairscale", f);
+		break;
+	case CH_OPT_SIZE:
+		f = scr_crosshairsize.value + dir;
+		if (f < 4) f = 4;
+		else if (f > 48) f = 48;
+		Cvar_SetValue ("scr_crosshairsize", f);
+		break;
+	case CH_OPT_THICKNESS:
+		f = scr_crosshairthickness.value + dir;
+		if (f < 1) f = 1;
+		else if (f > 16) f = 16;
+		Cvar_SetValue ("scr_crosshairthickness", f);
+		break;
+	case CH_OPT_SHAPE:
+	{
+		int shape = CLAMP (0, (int)scr_crosshairshape.value, (int)Q_COUNTOF(crosshair_shape_names) - 1);
+		shape = (shape + dir + (int)Q_COUNTOF(crosshair_shape_names)) % (int)Q_COUNTOF(crosshair_shape_names);
+		Cvar_SetValue ("scr_crosshairshape", shape);
+	}
+		break;
+	case CH_OPT_COLOR:
+		f = scr_crosshaircolor.value + dir;
+		if (f < 0) f = 0;
+		else if (f > 255) f = 255;
+		Cvar_SetValue ("scr_crosshaircolor", f);
+		break;
+	case CH_OPT_ALPHA:
+		f = scr_crosshairalpha.value + dir * 0.01;
+		if (f < 0) f = 0;
+		else if (f > 1) f = 1;
+		Cvar_SetValue ("scr_crosshairalpha", f);
+		break;
+	case CH_OPT_STATS:
+		Cvar_Set ("scr_crosshairstats", scr_crosshairstats.value ? "0" : "1");
+		break;
+	case CH_OPT_STATS_DIST:
+		f = scr_crosshairstatsdistance.value + dir;
+		if (f < 0) f = 0;
+		else if (f > 200) f = 200;
+		Cvar_SetValue ("scr_crosshairstatsdistance", f);
+		break;
+	case CH_OPT_BARUNITSIZE:
+		f = scr_crosshairbarunitsize.value + dir;
+		if (f < 1) f = 1;
+		else if (f > 16) f = 16;
+		Cvar_SetValue ("scr_crosshairbarunitsize", f);
+		break;
+	}
+}
+
+void M_Crosshair_Draw (void)
+{
+	float	r;
+	int	crosshair_mode;
+	int	crosshair_shape;
+	qpic_t	*p;
+
+	crosshair_mode = CLAMP (0, (int)crosshair.value,
+				(int)Q_COUNTOF(crosshair_mode_names) - 1);
+	crosshair_shape = CLAMP (0, (int)scr_crosshairshape.value,
+				(int)Q_COUNTOF(crosshair_shape_names) - 1);
+
+	// M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
+	// p = Draw_CachePic ("gfx/p_option.lmp");
+	// M_DrawPic ((320-p->width)/2, 4, p);
+
+	M_Print (16, 24, "     Crosshair Options");
+
+	M_Print (16, 32 + 8*CH_OPT_MODE, "                  Mode");
+	M_Print (220, 32 + 8*CH_OPT_MODE, crosshair_mode_names[crosshair_mode]);
+
+	M_Print (16, 32 + 8*CH_OPT_SCALE, "                 Scale");
+	r = (scr_crosshairscale.value - 1) / 9.0;
+	M_DrawSlider (220, 32 + 8*CH_OPT_SCALE, r, scr_crosshairscale.value, "%.1f");
+
+	M_Print (16, 32 + 8*CH_OPT_SIZE, "                  Size");
+	r = (scr_crosshairsize.value - 4) / 44.0;
+	M_DrawSlider (220, 32 + 8*CH_OPT_SIZE, r, scr_crosshairsize.value, "%.0f");
+
+	M_Print (16, 32 + 8*CH_OPT_THICKNESS, "             Thickness");
+	r = (scr_crosshairthickness.value - 1) / 15.0;
+	M_DrawSlider (220, 32 + 8*CH_OPT_THICKNESS, r, scr_crosshairthickness.value, "%.0f");
+
+	M_Print (16, 32 + 8*CH_OPT_SHAPE, "                 Shape");
+	M_Print (220, 32 + 8*CH_OPT_SHAPE, crosshair_shape_names[crosshair_shape]);
+
+	M_Print (16, 32 + 8*CH_OPT_COLOR, "                 Color");
+	r = scr_crosshaircolor.value / 255.0;
+	M_DrawSlider (220, 32 + 8*CH_OPT_COLOR, r, scr_crosshaircolor.value, "%.0f");
+
+	M_Print (16, 32 + 8*CH_OPT_ALPHA, "                 Alpha");
+	r = scr_crosshairalpha.value;
+	M_DrawSlider (220, 32 + 8*CH_OPT_ALPHA, r, scr_crosshairalpha.value, "%.2f");
+
+	M_Print (16, 32 + 8*CH_OPT_STATS, "        Show Stat Bars");
+	M_DrawCheckbox (220, 32 + 8*CH_OPT_STATS, scr_crosshairstats.value);
+
+	M_Print (16, 32 + 8*CH_OPT_STATS_DIST, "    Stat Bars Distance");
+	r = scr_crosshairstatsdistance.value / 200.0;
+	M_DrawSlider (220, 32 + 8*CH_OPT_STATS_DIST, r, scr_crosshairstatsdistance.value, "%.0f");
+
+	M_Print (16, 32 + 8*CH_OPT_BARUNITSIZE, "   Stat Bars Unit Size");
+	r = (scr_crosshairbarunitsize.value - 1) / 15.0;
+	M_DrawSlider (220, 32 + 8*CH_OPT_BARUNITSIZE, r, scr_crosshairbarunitsize.value, "%.0f");
+
+	M_DrawCharacter (200, 32 + crosshair_cursor*8, 12+((int)(realtime*4)&1));
+}
+
+void M_Crosshair_Key (int k)
+{
+	switch (k)
+	{
+	case K_ESCAPE:
+	case K_BBUTTON:
+		M_Menu_Options_f ();
+		break;
+
+	case K_ENTER:
+	case K_KP_ENTER:
+	case K_ABUTTON:
+		m_entersound = true;
+		M_Crosshair_AdjustSliders (1);
+		return;
+
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		crosshair_cursor--;
+		if (crosshair_cursor < 0)
+			crosshair_cursor = CROSSHAIR_ITEMS - 1;
+		break;
+
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		crosshair_cursor++;
+		if (crosshair_cursor >= CROSSHAIR_ITEMS)
+			crosshair_cursor = 0;
+		break;
+
+	case K_LEFTARROW:
+		M_Crosshair_AdjustSliders (-1);
+		break;
+
+	case K_RIGHTARROW:
+		M_Crosshair_AdjustSliders (1);
+		break;
 	}
 }
 
@@ -2558,6 +2779,7 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
 	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
+	Cmd_AddCommand ("menu_crosshair", M_Menu_Crosshair_f);
 	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
 	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
 	Cmd_AddCommand ("help", M_Menu_Help_f);
@@ -2623,6 +2845,10 @@ void M_Draw (void)
 
 	case m_options:
 		M_Options_Draw ();
+		break;
+
+	case m_crosshair:
+		M_Crosshair_Draw ();
 		break;
 
 	case m_keys:
@@ -2711,6 +2937,10 @@ void M_Keydown (int key)
 
 	case m_options:
 		M_Options_Key (key);
+		return;
+
+	case m_crosshair:
+		M_Crosshair_Key (key);
 		return;
 
 	case m_keys:

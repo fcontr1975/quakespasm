@@ -666,6 +666,7 @@ void SCR_DrawLoading (void)
 SCR_DrawCrosshair -- johnfitz
 =============================
 */
+
 void SCR_DrawCrosshair (void)
 {
 	GL_SetCanvas(CANVAS_CROSSHAIR);

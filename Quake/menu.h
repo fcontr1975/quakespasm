@@ -33,6 +33,7 @@ enum m_state_e {
 	m_setup,
 	m_net,
 	m_options,
+	m_crosshair,
 	m_video,
 	m_keys,
 	m_help,
@@ -59,6 +60,7 @@ void M_ToggleMenu_f (void);
 
 void M_Menu_Main_f (void);
 void M_Menu_Options_f (void);
+void M_Menu_Crosshair_f (void);
 void M_Menu_Quit_f (void);
 
 void M_Print (int cx, int cy, const char *str);
